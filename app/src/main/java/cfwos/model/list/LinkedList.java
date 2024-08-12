@@ -75,7 +75,7 @@ public class LinkedList<V> implements InterfaceList<V> {
         Node t = searchNode(crit);
 
         if (t == null) {
-            System.out.println("Element not found");
+            // System.out.println("Element not found");
             return false;
         } else {
             Node n = new Node(value);
@@ -100,15 +100,14 @@ public class LinkedList<V> implements InterfaceList<V> {
         V rData = null;
 
         if (head == null) {
-            System.out.println("Empty list");
+            // System.out.println("Empty list");
             return null;
         }
         if (head == tail) {
             rData = head.data;
             head = null;
             tail = null;
-            System.out.println("last element removed from list");
-            size--;
+            // System.out.println("last element removed from list");
         } else {
             head = head.next;
             head.prev = null;
@@ -117,7 +116,7 @@ public class LinkedList<V> implements InterfaceList<V> {
         t.next = null;
 
         size--;
-        System.out.println("First element removed from list");
+        //System.out.println("First element removed from list");
 
         return rData;
     }
@@ -126,77 +125,73 @@ public class LinkedList<V> implements InterfaceList<V> {
         V rData = null;
 
         if (tail == null) {
-            System.out.println("Empty list");
+            // System.out.println("Empty list");
             return null;
         } else {
             rData = tail.data;
             if (head == tail) {
                 head = null;
                 tail = null;
-                System.out.println("last element removed from list");
+                // System.out.println("last element removed from list");
             } else {
-                System.out.println("element removed from list");
+                // System.out.println("element removed from list");
                 Node tBefore = tail.prev;
                 tail.prev = null;
                 tail = tBefore;
                 tail.next = null;
             }
+
             size--;
+            //System.out.println("Last element removed from list");
+
         }
         return rData;
     }
 
-    public V removeAfter(V crit) {
+    public V removeCrit(V crit) {
         V rData = null;
 
-        if (head == null) {
-            System.out.println("Empty list");
+        if (isEmpty()) {
+            // ystem.out.println("Empty list");
             return null;
         }
 
         Node tBefore = null;
         Node removed = searchNode(crit);
 
-        if(removed != null){
-            tBefore = removed.next;
+        if (removed == null) {
+            // System.out.println("Element not found");
+            return null;
         }
+
+        tBefore = removed.prev; // safe from null pointer
 
         if (tBefore == null) {
-            if (head.data.equals(crit)==false){
-                System.out.println("Element not found");
-                return null;
-            }else{
-                return removeFirst();
-            }
-            
-        }else{
-            System.out.println("element removed from list");
+            return removeFirst();
+        } else if (removed == tail) {
+            return removeLast();
+        } else {
+            Node front = removed.next;
 
-            if (removed==tail){
-                return removeLast();
-            }else{
-                @SuppressWarnings("null")
-                Node front = removed.next;
-                
-                tBefore.next = front;
+            tBefore.next = front;
+            if (front != null) {
                 front.prev = tBefore;
-
-                removed.next = null;
-                removed.prev = null;
-
-                rData = removed.data;
-
-                size--;
-                return rData;
             }
-        }
 
+            removed.next = null;
+            removed.prev = null;
+
+            size--;
+
+            rData = removed.data;
+            return rData;
+        }
     }
 
     public V peekFirst() {
         // peekFirst
         if (head == null) {
-            System.out.println("Empty list");
+            // System.out.println("Empty list");
             return null;
         }
         return head.data;
@@ -206,7 +201,7 @@ public class LinkedList<V> implements InterfaceList<V> {
     public V peekLast() {
         // peekLast
         if (head == null) {
-            System.out.println("Empty list");
+            // System.out.println("Empty list");
             return null;
         }
         return tail.data;
@@ -231,8 +226,8 @@ public class LinkedList<V> implements InterfaceList<V> {
     public void show() {
         Node t = head;
 
-        if (t == null) {
-            System.out.println("Empty list");
+        if (isEmpty()) {
+            // System.out.println("Empty list");
             return;
         }
         while (t != null) {
@@ -244,8 +239,8 @@ public class LinkedList<V> implements InterfaceList<V> {
     public void showReverse() {
         Node t = tail;
 
-        if (t == null) {
-            System.out.println("Empty list");
+        if (isEmpty()) {
+            // System.out.println("Empty list");
             return;
         }
         while (t != null) {

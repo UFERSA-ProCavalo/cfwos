@@ -12,7 +12,7 @@ public interface InterfaceList<V> {
 
     V removeLast();
 
-    V removeAfter(V crit);
+    V removeCrit(V crit);
 
     V peekFirst();
 

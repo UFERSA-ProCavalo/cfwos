@@ -11,6 +11,6 @@ public interface InterfaceTree<K, V> {
 
     void ShowReverse();
 
-    //int getSize();
+    int getSize();
 
 }

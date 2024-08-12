@@ -3,6 +3,7 @@ package cfwos.model.tree;
 public class TreeAVL<K extends Comparable<K>, V> implements InterfaceTree<K, V> {
 
     private Node root;
+    private int balanceCounter;
     // private int size;
 
     class Node {
@@ -23,6 +24,7 @@ public class TreeAVL<K extends Comparable<K>, V> implements InterfaceTree<K, V> 
     public TreeAVL() {
         root = null;
         // size = 0;
+        balanceCounter = 0;
     }
 
     @Override
@@ -31,12 +33,11 @@ public class TreeAVL<K extends Comparable<K>, V> implements InterfaceTree<K, V> 
     }
 
     Node Insert(Node tree, K k, V v) {
-
         /*
          * 1. Perform the normal binary insertion
          */
         if (tree == null) {
-            System.out.println("Node inserted: " + k + " : " + v);
+            //System.out.println("Node inserted: " + k + " : " + v);
             return new Node(k, v);
         }
 
@@ -76,22 +77,28 @@ public class TreeAVL<K extends Comparable<K>, V> implements InterfaceTree<K, V> 
 
         // Left Left Case
         if (balanceFactor > 1 && balanceFactorLeft >= 0) {
+            balanceCounter++;
             return rightRotate(tree);
+
         }
 
         // Right Right Case
         if (balanceFactor < -1 && balanceFactorRight <= 0) {
+            balanceCounter++;
             return leftRotate(tree);
+
         }
 
         // Left Right Case
         if (balanceFactor > 1 && balanceFactorLeft < 0) {
+            balanceCounter++;
             tree.l = leftRotate(tree.l);
             return rightRotate(tree);
         }
 
         // Right Left Case
         if (balanceFactor < -1 && balanceFactorRight > 0) {
+            balanceCounter++;
             tree.r = rightRotate(tree.r);
             return leftRotate(tree);
         }
@@ -198,22 +205,26 @@ public class TreeAVL<K extends Comparable<K>, V> implements InterfaceTree<K, V> 
 
         // Left Left Case
         if (balanceFactor > 1 && balanceFactorLeft >= 0) {
+            balanceCounter++;
             return rightRotate(tree);
         }
 
         // Right Right Case
         if (balanceFactor < -1 && balanceFactorRight <= 0) {
+            balanceCounter++;
             return leftRotate(tree);
         }
 
         // Left Right Case
         if (balanceFactor > 1 && balanceFactorLeft < 0) {
+            balanceCounter++;
             tree.l = leftRotate(tree.l);
             return rightRotate(tree);
         }
 
         // Right Left Case
         if (balanceFactor < -1 && balanceFactorRight > 0) {
+            balanceCounter++;
             tree.r = rightRotate(tree.r);
             return leftRotate(tree);
         }
@@ -286,17 +297,21 @@ public class TreeAVL<K extends Comparable<K>, V> implements InterfaceTree<K, V> 
 
     @Override
     public V Search(K k) {
-        Node temp = root;
-        while (temp != null) {
-            if (k.compareTo(temp.key) < 0) {
-                temp = temp.l;
-            } else if (k.compareTo(temp.key) > 0) {
-                temp = temp.r;
-            } else {
-                return temp.val;
-            }
+        return Search(root, k);
+    }
+
+    private V Search(Node node, K k) {
+        if (node == null) {
+            return null;
         }
-        return null;
+
+        if (k.compareTo(node.key) < 0) {
+            return Search(node.l, k);
+        } else if (k.compareTo(node.key) > 0) {
+            return Search(node.r, k);
+        } else {
+            return node.val;
+        }
     }
 
     private void inOrderTraversal(Node node) {
@@ -325,15 +340,38 @@ public class TreeAVL<K extends Comparable<K>, V> implements InterfaceTree<K, V> 
         reverseInOrderTraversal(root);
     }
 
-    // @Override
-    // public int getSize() {
-    // return getSize(root);
-    // }
+    @Override
+    public int getSize() {
+        return getSize(root);
+    }
 
-    // int getSize(Node tree) {
-    // if (tree == null) {
-    // return 0;
-    // }
-    // return 1 + getSize(tree.l) + getSize(tree.r);
-    // }
+    int getSize(Node tree) {
+        if (tree == null) {
+            return 0;
+        }
+        return 1 + getSize(tree.l) + getSize(tree.r);
+    }
+
+    public int getTreeHeight() {
+        return getTreeHeight(root);
+    }
+
+    private int getTreeHeight(Node node) {
+        if (node == null) {
+            return -1;
+        }
+        return node.heightNode;
+    }
+
+    Node getRoot() {
+        return root;
+    }
+
+    public int getBalanceCounter() {
+        return balanceCounter;
+    }
+
+    public void resetBalanceCounter() {
+        balanceCounter = 0;
+    }
 }
