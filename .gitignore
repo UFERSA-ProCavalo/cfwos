@@ -6,3 +6,5 @@ build
 
 # Ignore vscode settings
 .vscode
+server_log.txt
+server_log.log

@@ -12,7 +12,7 @@ public class Server {
     public Server() {
         this.database = new Database();
         
-        this.logger = new Logger("server_log.txt");
+        this.logger = new Logger("server_log.log");
     }
 
     public Database getDatabase() {
@@ -21,6 +21,14 @@ public class Server {
 
     public void log(String message) {
         logger.log(message);
+    }
+
+    public void log(String level, String message) {
+        logger.log(level, message);
+    }
+
+    public void closeLogger() {
+        logger.close();
     }
 
 

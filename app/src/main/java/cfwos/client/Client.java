@@ -36,14 +36,16 @@ public class Client {
             System.out.println("WorkOrder already exists in cache. \n"
                     + "WorkOder: " + cache.get(new WorkOrder(code, null, null)) + "\n\n"
                     + "Did you mean to update it?");
-            Return();
+            showCache();
+            return;
         }
 
         if (isInDatabase(code)) {
             System.out.println("WorkOrder already exists in the database. \n"
                     + "WorkOder: " + server.getDatabase().searchWorkOrder(code) + "\n\n"
                     + "Did you mean to update it?");
-            Return();
+            showCache();
+            return;
         }
 
         System.out.print("Enter WorkOrder name: ");
@@ -62,7 +64,8 @@ public class Client {
         System.out.println("\nWorkOrder inserted successfully.\n");
 
         LoggerUpdate(OperationMessage);
-        Return();
+        showCache();
+        return;
     }
 
     /*
@@ -94,7 +97,8 @@ public class Client {
         System.out.println("\nWorkOrder removed successfully.\n");
 
         LoggerUpdate(OperationMessage);
-        Return();
+        showCache();
+        return;
     }
 
     /*
@@ -116,10 +120,11 @@ public class Client {
             cache.remove(new WorkOrder(code, null, null)); // remove from cache
         } else if (server.getDatabase().searchWorkOrder(code) == null) {
             System.out.println("WorkOrder not found in the database.\n");
+            showCache();
             return;
         }
 
-        OperationMessage = " | Update WorkOrder: " + server.getDatabase().searchWorkOrder(code);
+        OperationMessage = "Update WorkOrder: " + server.getDatabase().searchWorkOrder(code);
 
         System.out.print("Enter new WorkOrder name: ");
         String name = scanner.nextLine();
@@ -129,13 +134,15 @@ public class Client {
 
         WorkOrder workOrder = new WorkOrder(code, name, description);
 
-        OperationMessage += " -|- New WorkOrder: " + server.getDatabase().searchWorkOrder(code);
         server.getDatabase().updateWorkOrder(code, workOrder); // update in database
         cache.add(workOrder); // add to cache
+
+        OperationMessage += " -|- New WorkOrder: " + server.getDatabase().searchWorkOrder(code);
         System.out.println("\nWorkOrder updated successfully.\n");
 
         LoggerUpdate(OperationMessage);
-        Return();
+        showCache();
+        return;
     }
 
     /*
@@ -153,7 +160,8 @@ public class Client {
         } else {
             System.out.println("WorkOrder not found.");
         }
-        Return();
+        showCache();
+        return;
     }
 
     /*
@@ -163,7 +171,8 @@ public class Client {
         System.out.println("Listing existing WorkOrders:");
         server.getDatabase().showDatabase();
 
-        Return();
+        showCache();
+        return;
     }
 
     public CacheFIFO<WorkOrder> getCache() {
@@ -198,10 +207,18 @@ public class Client {
      * LOGGING METHOD
      */
     public void LoggerUpdate(String message) {
-        server.log("Tree Height: " + server.getDatabase().getTreeHeight()
+        String logMessage = "Tree Height: " + server.getDatabase().getTreeHeight()
                 + " | Tree Size: " + server.getDatabase().getSize()
                 + " | Rotation in the AVL tree: " + (server.isUnbalanced() ? "Yes" : "No")
-                + message);
+                + " | " + message;
+
+        // Log the constructed message using the logger
+        server.log("INFO", logMessage);
+    }
+
+    // Ensure to close the logger when done
+    public void closeLogger() {
+        server.closeLogger();
     }
 
     /*
@@ -209,9 +226,10 @@ public class Client {
      * Used to show the cache after every operation
      * then return to the main menu
      */
-    public void Return() {
+    public void showCache() {
         if (cache.getSize() == 0) {
             System.out.println("\nCache is empty.\n");
+            return;
         }
         System.out.println("\nListing Cache:");
         cache.showCache();
