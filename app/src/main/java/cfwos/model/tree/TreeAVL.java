@@ -19,6 +19,7 @@ public class TreeAVL<K extends Comparable<K>, V> implements InterfaceTree<K, V> 
             this.l = null;
             this.r = null;
         }
+        
     }
 
     public TreeAVL() {
@@ -374,4 +375,5 @@ public class TreeAVL<K extends Comparable<K>, V> implements InterfaceTree<K, V> 
     public void resetBalanceCounter() {
         balanceCounter = 0;
     }
+
 }

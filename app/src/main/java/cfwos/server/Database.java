@@ -16,13 +16,21 @@ public class Database{
         
     }
 
+    public void addWorkOrder(int code, String name, String description, String timestamp) {
+        WorkOrder workOrder = new WorkOrder(code, name, description, timestamp);
+        database.Insert(code, workOrder);
+    }
+
     public void removeWorkOrder(int code) {
         database.Remove(code);
     }
 
-    public void updateWorkOrder(int code, WorkOrder workOrder) {
-        database.Remove(code);
-        database.Insert(code, workOrder);
+    public void updateWorkOrder(int code, String name, String description, String timestamp) {
+        WorkOrder temp = database.Search(code);
+        temp.setName(name);
+        temp.setDescription(description);
+        temp.setTimestamp(timestamp);
+        //database.Insert(code, workOrder);
     }
 
     public WorkOrder searchWorkOrder(int code) {

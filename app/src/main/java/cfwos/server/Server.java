@@ -26,7 +26,7 @@ public class Server {
     public void log(String level, String message) {
         logger.log(level, message);
     }
-
+    
     public void closeLogger() {
         logger.close();
     }
@@ -34,12 +34,6 @@ public class Server {
 
     public Logger getLogger() {
         return logger;
-    }
-
-    public boolean isUnbalanced() {
-        BeforeBalanceCounter = database.getBalanceCounter();
-        AfterBalanceCounter = database.getBalanceCounter();
-        return BeforeBalanceCounter != AfterBalanceCounter;
     }
 
 }

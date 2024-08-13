@@ -1,18 +1,29 @@
 package cfwos.model.entity;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class WorkOrder {
     private int code;
     private String name;
     private String description;
     private String timestamp;
+    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+
+    // LocalDateTime Formatter
 
     public WorkOrder(int code, String name, String description) {
         this.code = code;
         this.name = name;
         this.description = description;
-        this.timestamp = LocalDateTime.now().toString();
+        this.timestamp = LocalDateTime.now().format(formatter).toString();
+    }
+
+    public WorkOrder(int code, String name, String description, String timestamp) {
+        this.code = code;
+        this.name = name;
+        this.description = description;
+        this.timestamp = timestamp;
     }
 
     public int getCode() {
@@ -43,6 +54,10 @@ public class WorkOrder {
         return timestamp;
     }
 
+    public void setTimestamp(String timestamp) {
+        this.timestamp = timestamp;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -57,7 +72,7 @@ public class WorkOrder {
 
     // @Override
     // public int hashCode() {
-    //     return Integer.hashCode(code);
+    // return Integer.hashCode(code);
     // }
 
     @Override

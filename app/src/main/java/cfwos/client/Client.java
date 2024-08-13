@@ -1,9 +1,14 @@
 package cfwos.client;
 
+import java.util.InputMismatchException;
 import java.util.Scanner;
 import cfwos.model.entity.WorkOrder;
 import cfwos.cache.CacheFIFO;
 import cfwos.server.Server;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 public class Client {
     private CacheFIFO<WorkOrder> cache;
@@ -24,8 +29,8 @@ public class Client {
      */
     public void insertWorkOrder() {
         System.out.print("Enter WorkOrder ID: ");
-        int code = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
+        int code = ValidateCodeInput();
+        scanner.nextLine(); // Consume the newline character
 
         /*
          * CHECKS IF THE WORKORDER IS IN THE CACHE
@@ -36,7 +41,7 @@ public class Client {
             System.out.println("WorkOrder already exists in cache. \n"
                     + "WorkOder: " + cache.get(new WorkOrder(code, null, null)) + "\n\n"
                     + "Did you mean to update it?");
-            showCache();
+
             return;
         }
 
@@ -44,7 +49,8 @@ public class Client {
             System.out.println("WorkOrder already exists in the database. \n"
                     + "WorkOder: " + server.getDatabase().searchWorkOrder(code) + "\n\n"
                     + "Did you mean to update it?");
-            showCache();
+            cache.add(server.getDatabase().searchWorkOrder(code)); // add to cache
+
             return;
         }
 
@@ -54,18 +60,28 @@ public class Client {
         System.out.print("Enter WorkOrder description: ");
         String description = scanner.nextLine();
 
-        WorkOrder workOrder = new WorkOrder(code, name, description);
+        String timestamp = ValidateDateInput();
+
+        // System.out.println("Enter WorkOrder date (Blank for current time) - [default
+        // format dd-MM-yyyy HH:mm:ss]: ");
+
+        // String timestamp = scanner.nextLine();
+
+        WorkOrder workOrder = new WorkOrder(code, name, description, timestamp);
+        cache.add(workOrder); // add to cache
 
         OperationMessage = " | WorkOrder inserted: " + workOrder;
+        int oldBalance = server.getDatabase().getBalanceCounter();
+        int newBalance = oldBalance;
 
-        cache.add(workOrder); // add to cache
-        server.getDatabase().addWorkOrder(code, name, description); // add to database
+        server.getDatabase().addWorkOrder(code, name, description, timestamp); // add to database
 
+        newBalance = server.getDatabase().getBalanceCounter();
+        boolean isUnbalanced = (oldBalance != newBalance);
         System.out.println("\nWorkOrder inserted successfully.\n");
+        LoggerUpdate(OperationMessage, isUnbalanced);
 
-        LoggerUpdate(OperationMessage);
-        showCache();
-        return;
+        // return;
     }
 
     /*
@@ -73,9 +89,12 @@ public class Client {
      */
     public void removeWorkOrder() {
         System.out.print("Enter WorkOrder ID to remove: ");
-        int code = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
+        int code = ValidateCodeInput();
+        scanner.nextLine(); // Consume the newline character
+
         OperationMessage = " | WorkOrder removed: " + server.getDatabase().searchWorkOrder(code);
+        int oldBalance = server.getDatabase().getBalanceCounter();
+        int newBalance = oldBalance;
 
         /*
          * CHECKS IF THE WORKORDER IS IN THE CACHE
@@ -86,7 +105,7 @@ public class Client {
             cache.remove(new WorkOrder(code, null, null)); // remove from cache
             server.getDatabase().removeWorkOrder(code); // remove from database
 
-        } else if (server.getDatabase().searchWorkOrder(code) != null) {
+        } else if (isInDatabase(code)) {
             server.getDatabase().removeWorkOrder(code); // remove from database
 
         } else {
@@ -94,10 +113,12 @@ public class Client {
             return;
         }
 
+        newBalance = server.getDatabase().getBalanceCounter();
+        boolean isUnbalanced = (oldBalance != newBalance);
         System.out.println("\nWorkOrder removed successfully.\n");
 
-        LoggerUpdate(OperationMessage);
-        showCache();
+        LoggerUpdate(OperationMessage, isUnbalanced);
+
         return;
     }
 
@@ -108,8 +129,8 @@ public class Client {
      */
     public void updateWorkOrder() {
         System.out.print("Enter WorkOrder ID to update: ");
-        int code = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
+        int code = ValidateCodeInput();
+        scanner.nextLine(); // Consume the newline character
 
         /*
          * CHECKS IF THE WORKORDER IS IN THE CACHE
@@ -118,9 +139,9 @@ public class Client {
          */
         if (isInCache(code, new WorkOrder(code, null, null))) {
             cache.remove(new WorkOrder(code, null, null)); // remove from cache
-        } else if (server.getDatabase().searchWorkOrder(code) == null) {
+        } else if (!isInDatabase(code)) {
             System.out.println("WorkOrder not found in the database.\n");
-            showCache();
+
             return;
         }
 
@@ -132,16 +153,18 @@ public class Client {
         System.out.print("Enter new WorkOrder description: ");
         String description = scanner.nextLine();
 
-        WorkOrder workOrder = new WorkOrder(code, name, description);
+        String timestamp = ValidateDateInput();
 
-        server.getDatabase().updateWorkOrder(code, workOrder); // update in database
+        WorkOrder workOrder = new WorkOrder(code, name, description, timestamp);
+
+        server.getDatabase().updateWorkOrder(code, name, description, timestamp); // update in database
         cache.add(workOrder); // add to cache
 
         OperationMessage += " -|- New WorkOrder: " + server.getDatabase().searchWorkOrder(code);
         System.out.println("\nWorkOrder updated successfully.\n");
 
-        LoggerUpdate(OperationMessage);
-        showCache();
+        LoggerUpdate(OperationMessage, false);
+
         return;
     }
 
@@ -150,18 +173,28 @@ public class Client {
      */
     public void searchWorkOrder() {
         System.out.print("Enter WorkOrder ID to search: ");
-        int code = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
+        int code = ValidateCodeInput();
+        scanner.nextLine(); // Consume the newline character
 
-        WorkOrder workOrder = server.getDatabase().searchWorkOrder(code);
-        if (workOrder != null) {
-            String.format("WorkOrder found: %s", workOrder);
-            System.out.println("WorkOrder found: " + workOrder);
-        } else {
-            System.out.println("WorkOrder not found.");
+        if (isInCache(code, new WorkOrder(code, null, null))) {
+            String.format("WorkOrder found in cache: %s", cache.get(new WorkOrder(code, null, null)));
+            System.out.println("WorkOrder found in cache: " + cache.get(new WorkOrder(code, null, null)));
+
+            return;
         }
-        showCache();
+
+        if (isInDatabase(code)) {
+            String.format("WorkOrder found in the database: %s", server.getDatabase().searchWorkOrder(code));
+            System.out.println("WorkOrder found in the database: " + server.getDatabase().searchWorkOrder(code));
+            cache.add(server.getDatabase().searchWorkOrder(code)); // add to cache
+
+            return;
+        }
+
+        System.out.println("WorkOrder not found.");
+
         return;
+
     }
 
     /*
@@ -171,12 +204,21 @@ public class Client {
         System.out.println("Listing existing WorkOrders:");
         server.getDatabase().showDatabase();
 
-        showCache();
         return;
     }
 
+    /*
+     * GET CACHE
+     */
     public CacheFIFO<WorkOrder> getCache() {
         return cache;
+    }
+    
+    /*
+     * LIST WORKORDER COUNT
+     */
+    public void listWorkOrderCount() {
+        System.out.println("WorkOrder count: " + server.getDatabase().getSize());
     }
 
     /*
@@ -186,7 +228,7 @@ public class Client {
     /*
      * Checks if the WorkOrder is in the cache
      */
-    public boolean isInCache(int code, WorkOrder workOrder) {
+    private boolean isInCache(int code, WorkOrder workOrder) {
         if (cache.get(workOrder) != null) {
             return true;
         }
@@ -196,7 +238,7 @@ public class Client {
     /*
      * Checks if the WorkOrder is in the database
      */
-    public boolean isInDatabase(int code) {
+    private boolean isInDatabase(int code) {
         if (server.getDatabase().searchWorkOrder(code) != null) {
             return true;
         }
@@ -206,10 +248,10 @@ public class Client {
     /*
      * LOGGING METHOD
      */
-    public void LoggerUpdate(String message) {
+    public void LoggerUpdate(String message, boolean isUnbalanced) {
         String logMessage = "Tree Height: " + server.getDatabase().getTreeHeight()
                 + " | Tree Size: " + server.getDatabase().getSize()
-                + " | Rotation in the AVL tree: " + (server.isUnbalanced() ? "Yes" : "No")
+                + " | Rotation in the AVL tree: " + (isUnbalanced ? "Yes" : "No")
                 + " | " + message;
 
         // Log the constructed message using the logger
@@ -236,4 +278,77 @@ public class Client {
         System.out.println("\n");
         return;
     }
+
+    /*
+     * INSERT 20 ENTRIES
+     * Made to fill the cache and test its policy (FIFO)
+     */
+    public void insert20Entries() {
+        int oldBalance;
+        int newBalance;
+        boolean isUnbalanced = false;
+        for (int i = 61; i < 80; i++) {
+            WorkOrder workOrder = new WorkOrder(i, "WorkOrder" + i, "Description" + i);
+            cache.add(workOrder);
+            oldBalance = server.getDatabase().getBalanceCounter();
+            server.getDatabase().addWorkOrder(i, "WorkOrder" + i, "Description" + i);
+            newBalance = server.getDatabase().getBalanceCounter();
+            isUnbalanced = (oldBalance != newBalance);
+            OperationMessage = " | WorkOrder inserted: " + workOrder;
+            LoggerUpdate(OperationMessage, isUnbalanced);
+        }
+    }
+
+    /*
+     * VALIDATE DATE INPUT
+     * Ensures the date is in the correct format
+     */
+    private String ValidateDateInput() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+        String timestamp;
+
+        while (true) {
+            System.out
+                    .println("Enter WorkOrder date (Blank for current time) - [default format dd-MM-yyyy HH:mm:ss]: ");
+            timestamp = scanner.nextLine();
+
+            if (timestamp.isEmpty()) {
+                timestamp = LocalDateTime.now().format(formatter).toString(); // Use the current date and time if input
+                                                                              // is blank
+                break;
+            } else {
+                try {
+                    timestamp = LocalDateTime.parse(timestamp, formatter).toString();
+                    break; // Break the loop if parsing is successful
+                } catch (DateTimeParseException e) {
+                    System.out.println(
+                            "Invalid date format. Please enter the date in the format dd-MM-yyyy HH:mm:ss! Or leave it blank for the current time.");
+                }
+            }
+        }
+        return timestamp;
+    }
+
+    /*
+     * VALIDATE CODE INPUT
+     * Ensures the code is an natural number
+     */
+    private int ValidateCodeInput() {
+        int code;
+        while (true) {
+            
+            try {
+                code = scanner.nextInt();
+                if (code < 0) {
+                    throw new InputMismatchException();
+                }
+                break;
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid code. Please enter a valid positive number.");
+                scanner.nextLine();
+            }
+        }
+        return code;
+    }
+
 }
