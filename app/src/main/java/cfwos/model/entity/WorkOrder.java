@@ -70,10 +70,10 @@ public class WorkOrder {
         return code == workOrder.code;
     }
 
-    // @Override
-    // public int hashCode() {
-    // return Integer.hashCode(code);
-    // }
+    @Override
+    public int hashCode() {
+    return Integer.hashCode(code);
+    }
 
     @Override
     public String toString() {

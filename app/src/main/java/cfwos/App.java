@@ -7,7 +7,7 @@ import java.util.Scanner;
 
 public class App {
 
-        public static void main(String[] args) throws Exception{
+        public static void main(String[] args) throws Exception {
                 System.out.println("\033[2J\033[1;1H");
                 Scanner scanner = new Scanner(System.in);
                 Server server = new Server();
@@ -71,7 +71,8 @@ public class App {
                                 // break;
                                 case '0':
                                         System.out.println("Adding 20 entries to the cach!");
-                                        client.insert20Entries();
+                                        // client.insert20Entries();
+                                        client.search20Entries();
                                         break;
                                 default:
                                         System.out.println("Operation not listed, please try again.");
@@ -84,23 +85,23 @@ public class App {
         }
 
         public static void insert60Entries(Server server, Client client) {
-                int oldBalance;
-                int newBalance;
-                boolean isUnbalanced = false;
-                for (int i = 0; i < 60; i++) {
-                        oldBalance = server.getDatabase().getBalanceCounter();
+                //int oldBalance;
+                //int newBalance;
+                //boolean isUnbalanced = false;
+                for (int i = 0; i < 74; i++) {
+                        //oldBalance = server.getDatabase().getBalanceCounter();
                         server.getDatabase().addWorkOrder(i, "WorkOrder" + i, "Description" + i);
-                        newBalance = server.getDatabase().getBalanceCounter();
-                        isUnbalanced = (oldBalance != newBalance);
+                        //newBalance = server.getDatabase().getBalanceCounter();
+                        //isUnbalanced = (oldBalance != newBalance);
                         String message = " | WorkOrder inserted: " + server.getDatabase().searchWorkOrder(i);
-                        client.LoggerUpdate(message, isUnbalanced);
+                        String CollisionMessage = server.getDatabase().getCollisionMessage();
+                        client.LoggerUpdate(message, CollisionMessage);
                 }
         }
 
-        public boolean isUnbalanced(Server server) {
-                int BeforeBalanceCounter = server.getDatabase().getBalanceCounter();
-                int AfterBalanceCounter = server.getDatabase().getBalanceCounter();
-                return BeforeBalanceCounter != AfterBalanceCounter;
-        }
-
+        // public boolean isUnbalanced(Server server) {
+        //         int BeforeBalanceCounter = server.getDatabase().getBalanceCounter();
+        //         int AfterBalanceCounter = server.getDatabase().getBalanceCounter();
+        //         return BeforeBalanceCounter != AfterBalanceCounter;
+        // }
 }

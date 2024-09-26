@@ -2,8 +2,10 @@ package cfwos.client;
 
 import java.util.InputMismatchException;
 import java.util.Scanner;
+
 import cfwos.model.entity.WorkOrder;
-import cfwos.cache.CacheFIFO;
+//import cfwos.cache.CacheFIFO;
+import cfwos.cache.CacheRANDOM;
 import cfwos.server.Server;
 
 import java.time.LocalDateTime;
@@ -11,14 +13,16 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
 public class Client {
-    private CacheFIFO<WorkOrder> cache;
+    //private CacheFIFO<WorkOrder> cache;
+    private CacheRANDOM<WorkOrder> cache;
     private Server server;
     private Scanner scanner;
     private String OperationMessage;
-    private String name;
+    public String name;
 
     public Client(Scanner scanner, Server server, String name) {
-        this.cache = new CacheFIFO<>();
+        //this.cache = new CacheFIFO<>();
+        this.cache = new CacheRANDOM<>();
         this.server = server;
         this.scanner = scanner;
         this.name = name;
@@ -49,7 +53,7 @@ public class Client {
             System.out.println("WorkOrder already exists in the database. \n"
                     + "WorkOder: " + server.getDatabase().searchWorkOrder(code) + "\n\n"
                     + "Did you mean to update it?");
-            cache.add(server.getDatabase().searchWorkOrder(code)); // add to cache
+            //cache.add(server.getDatabase().searchWorkOrder(code)); // add to cache
 
             return;
         }
@@ -68,18 +72,19 @@ public class Client {
         // String timestamp = scanner.nextLine();
 
         WorkOrder workOrder = new WorkOrder(code, name, description, timestamp);
-        cache.add(workOrder); // add to cache
+        //cache.add(workOrder); // add to cache
 
         OperationMessage = " | WorkOrder inserted: " + workOrder;
-        int oldBalance = server.getDatabase().getBalanceCounter();
-        int newBalance = oldBalance;
+        //int oldBalance = server.getDatabase().getBalanceCounter();
+        //int newBalance = oldBalance;
 
         server.getDatabase().addWorkOrder(code, name, description, timestamp); // add to database
+        String CollisionMessage = server.getDatabase().getCollisionMessage();
 
-        newBalance = server.getDatabase().getBalanceCounter();
-        boolean isUnbalanced = (oldBalance != newBalance);
+        //newBalance = server.getDatabase().getBalanceCounter();
+        //boolean isUnbalanced = (oldBalance != newBalance);
         System.out.println("\nWorkOrder inserted successfully.\n");
-        LoggerUpdate(OperationMessage, isUnbalanced);
+        LoggerUpdate(OperationMessage, CollisionMessage);
 
         // return;
     }
@@ -93,8 +98,8 @@ public class Client {
         scanner.nextLine(); // Consume the newline character
 
         OperationMessage = " | WorkOrder removed: " + server.getDatabase().searchWorkOrder(code);
-        int oldBalance = server.getDatabase().getBalanceCounter();
-        int newBalance = oldBalance;
+        //int oldBalance = server.getDatabase().getBalanceCounter();
+        //int newBalance = oldBalance;
 
         /*
          * CHECKS IF THE WORKORDER IS IN THE CACHE
@@ -113,11 +118,12 @@ public class Client {
             return;
         }
 
-        newBalance = server.getDatabase().getBalanceCounter();
-        boolean isUnbalanced = (oldBalance != newBalance);
+        //newBalance = server.getDatabase().getBalanceCounter();
+        //boolean isUnbalanced = (oldBalance != newBalance);
         System.out.println("\nWorkOrder removed successfully.\n");
 
-        LoggerUpdate(OperationMessage, isUnbalanced);
+        server.getDatabase().getCollisionMessage();
+        LoggerUpdate(OperationMessage);
 
         return;
     }
@@ -138,7 +144,7 @@ public class Client {
          * If it isn't, we continue to check if it is in the database
          */
         if (isInCache(code, new WorkOrder(code, null, null))) {
-            cache.remove(new WorkOrder(code, null, null)); // remove from cache
+            //cache.remove(new WorkOrder(code, null, null)); // remove from cache
         } else if (!isInDatabase(code)) {
             System.out.println("WorkOrder not found in the database.\n");
 
@@ -158,13 +164,12 @@ public class Client {
         WorkOrder workOrder = new WorkOrder(code, name, description, timestamp);
 
         server.getDatabase().updateWorkOrder(code, name, description, timestamp); // update in database
-        cache.add(workOrder); // add to cache
+        cache.update(workOrder); // update cache
 
         OperationMessage += " -|- New WorkOrder: " + server.getDatabase().searchWorkOrder(code);
         System.out.println("\nWorkOrder updated successfully.\n");
 
-        LoggerUpdate(OperationMessage, false);
-
+        LoggerUpdate(OperationMessage);
         return;
     }
 
@@ -210,7 +215,10 @@ public class Client {
     /*
      * GET CACHE
      */
-    public CacheFIFO<WorkOrder> getCache() {
+    // public CacheFIFO<WorkOrder> getCache() {
+    //     return cache;
+    // }
+    public CacheRANDOM<WorkOrder> getCache() {
         return cache;
     }
     
@@ -248,10 +256,24 @@ public class Client {
     /*
      * LOGGING METHOD
      */
-    public void LoggerUpdate(String message, boolean isUnbalanced) {
-        String logMessage = "Tree Height: " + server.getDatabase().getTreeHeight()
-                + " | Tree Size: " + server.getDatabase().getSize()
-                + " | Rotation in the AVL tree: " + (isUnbalanced ? "Yes" : "No")
+    // public void LoggerUpdate(String message, boolean isCollision) {
+    //     String logMessage = "Tree Height: " + server.getDatabase().getTreeHeight()
+    //             + " | Tree Size: " + server.getDatabase().getSize()
+    //             + " | Rotation in the AVL tree: " + (isCollision ? "Yes" : "No")
+    //             + " | " + message;
+    public void LoggerUpdate(String message, String CollisionMessage) {
+        String logMessage = "Cache Size: " + cache.getSize()
+                + " | Database Size: " + server.getDatabase().getSize()
+                + " | Collision in the database: " + (CollisionMessage != null ? "Yes, " + CollisionMessage : "No collision")
+                + " | " + message;
+
+        // Log the constructed message using the logger
+        server.log("INFO", logMessage);
+    }
+    
+    public void LoggerUpdate(String message) {
+        String logMessage = "Cache Size: " + cache.getSize()
+                + " | Database Size: " + server.getDatabase().getSize()
                 + " | " + message;
 
         // Log the constructed message using the logger
@@ -273,7 +295,7 @@ public class Client {
             System.out.println("\nCache is empty.\n");
             return;
         }
-        System.out.println("\nListing Cache:");
+        System.out.println("\nListing Cache:\n");
         cache.showCache();
         System.out.println("\n");
         return;
@@ -283,20 +305,31 @@ public class Client {
      * INSERT 20 ENTRIES
      * Made to fill the cache and test its policy (FIFO)
      */
-    public void insert20Entries() {
-        int oldBalance;
-        int newBalance;
-        boolean isUnbalanced = false;
-        for (int i = 61; i < 80; i++) {
+    // public void insert20Entries() {
+    //     int oldBalance;
+    //     int newBalance;
+    //     boolean isUnbalanced = false;
+    //     for (int i = 61; i < 80; i++) {
+    //         WorkOrder workOrder = new WorkOrder(i, "WorkOrder" + i, "Description" + i);
+    //         cache.add(workOrder);
+    //         oldBalance = server.getDatabase().getBalanceCounter();
+    //         server.getDatabase().addWorkOrder(i, "WorkOrder" + i, "Description" + i);
+    //         newBalance = server.getDatabase().getBalanceCounter();
+    //         isUnbalanced = (oldBalance != newBalance);
+    //         OperationMessage = " | WorkOrder inserted: " + workOrder;
+    //         LoggerUpdate(OperationMessage, isUnbalanced);
+    //     }
+    // }
+    /*
+     * SEARCH 20 ENTRIES
+     * Made to fill for the cache and test its policy (RANDOM) and colision treatment
+     */
+    public void search20Entries(){
+        for (int i = 0; i < 20; i++) {
             WorkOrder workOrder = new WorkOrder(i, "WorkOrder" + i, "Description" + i);
             cache.add(workOrder);
-            oldBalance = server.getDatabase().getBalanceCounter();
-            server.getDatabase().addWorkOrder(i, "WorkOrder" + i, "Description" + i);
-            newBalance = server.getDatabase().getBalanceCounter();
-            isUnbalanced = (oldBalance != newBalance);
-            OperationMessage = " | WorkOrder inserted: " + workOrder;
-            LoggerUpdate(OperationMessage, isUnbalanced);
         }
+        cache.showCache();
     }
 
     /*

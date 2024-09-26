@@ -31,7 +31,6 @@ public class Server {
         logger.close();
     }
 
-
     public Logger getLogger() {
         return logger;
     }
