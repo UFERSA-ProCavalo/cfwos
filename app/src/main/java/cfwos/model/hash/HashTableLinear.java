@@ -24,13 +24,22 @@ public class HashTableLinear<K> implements InterfaceHashTableLinear<K> {
     }
 
     // Hash function
-    // the hashCode() method returns a hash code value for the object since it's generic
+    // the hashCode() method returns a hash code value for the object since it's
+    // generic
     int hash(K key) {
         float A = 0.6180339887f; // Golden ratio
-        float temp = (float) key.hashCode() * A; 
+        float temp = (float) key.hashCode() * A;
         temp = temp - (int) temp;
         return (int) (M * temp);
-        
+
+    }
+
+    // Hash for code only
+    int hash(int key) {
+        float A = 0.6180339887f; // Golden ratio
+        float temp = (float) key * A;
+        temp = temp - (int) temp;
+        return (int) (M * temp);
     }
 
     //
@@ -41,20 +50,22 @@ public class HashTableLinear<K> implements InterfaceHashTableLinear<K> {
     // Insert key
     @Override
     public void insert(K key) {
-        int k = hash(key);
-        //int index = k; // Save the initial index to prevent infinite loop
-        //int attempts = 0;
+        // int k = hash(key);
+        int k = random();
+        // int index = k; // Save the initial index to prevent infinite loop
+        // int attempts = 0;
 
         // Tentativa linear
-        while (table[k] != null && !deleted[k]) {
+        while ((table[k] != null) && (!deleted[k])) {
             if (table[k].equals(key)) {
                 return;
             }
             System.out.println("Collision at { index " + k + " with key -> " + key.hashCode() + "} ");
             k = (k + 1) % M;
-            
-                // collisionCounter = collisionCounter + 1;
-                // collisionMessage+= "Collision at { index " + table[k] + " with key -> " + key + "} ";
+
+            // collisionCounter = collisionCounter + 1;
+            // collisionMessage+= "Collision at { index " + table[k] + " with key -> " + key
+            // + "} ";
         }
         System.out.println("Inserted key at index: " + k);
 
@@ -63,16 +74,16 @@ public class HashTableLinear<K> implements InterfaceHashTableLinear<K> {
         size++;
     }
 
-    // Search key
+    //search code only
     @Override
-    public K search(K key) {
+    public K search(int key) {
         int k = hash(key);
-        //int index = k; // Save the initial index to prevent infinite loop
+        // int index = k; // Save the initial index to prevent infinite loop
         int attempts = 0;
 
         // Tentativa linear
-        while (table[k] != null) {
-            if (table[k].equals(key)) {
+        while (table[k] != null || deleted[k]) {
+            if ((table[k] != null) && (table[k].equals(key)) && (!deleted[k])) {
                 return table[k];
             }
             k = (k + 1) % M;
@@ -82,29 +93,62 @@ public class HashTableLinear<K> implements InterfaceHashTableLinear<K> {
                 return null;
             }
         }
-        
+
         return null;
+    }
+
+    // Search key
+    @Override
+    public K search(K key) {
+        int k = hash(key);
+        // int index = k; // Save the initial index to prevent infinite loop
+        int attempts = 0;
+
+        // Tentativa linear
+        while (attempts < M) {
+            if ((table[k] != null) && (table[k].equals(key)) && (!deleted[k])) {
+                return table[k];
+            }
+            k = (k + 1) % M;
+            attempts++;
+        }
+
+        return null;
+    }
+
+    public int searchForIndividualRemove(K key) {
+        int k = hash(key);
+        // int index = k; // Save the initial index to prevent infinite loop
+        int attempts = 0;
+
+        // Tentativa linear
+        while (attempts < M) {
+            if ((table[k] != null) && (table[k].equals(key)) && (!deleted[k])) {
+                return k;
+            }
+            k = (k + 1) % M;
+            attempts++;
+        }
+
+        return -1;
     }
 
     // Remove key
     @Override
     public void remove(K key) {
-        int k = hash(key);
-
-        // Tentativa linear
-        while (table[k] != null) {
-            if (table[k].equals(key)) {
-                table[k] = null;
-                deleted[k] = true;
-                size--;
-                return;
-            }
-            k = (k + 1) % M;
+        int removed = searchForIndividualRemove(key);
+        if (removed != -1) {
+            table[removed] = null;
+            deleted[removed] = true;
+            size--;
+            System.out.println("Removed key at index: " + removed);
         }
+
+        return;
     }
 
-    //Remove random key
-    public void removeRandom(){
+    // Remove random key
+    public void removeRandom() {
         int k = random();
 
         // Tentativa aleatória
@@ -141,8 +185,6 @@ public class HashTableLinear<K> implements InterfaceHashTableLinear<K> {
         for (int i = 0; i < M; i++) {
             if (table[i] != null && !deleted[i]) {
                 System.out.println("[" + i + "] -> " + table[i]);
-            } else if (deleted[i]) {
-                System.out.println("[" + i + "] -> DELETED");
             } else {
                 System.out.println("[" + i + "] -> null");
             }

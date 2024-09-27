@@ -161,10 +161,10 @@ public class Client {
 
         String timestamp = ValidateDateInput();
 
-        WorkOrder workOrder = new WorkOrder(code, name, description, timestamp);
+        //WorkOrder workOrder = new WorkOrder(code, name, description, timestamp);
 
         server.getDatabase().updateWorkOrder(code, name, description, timestamp); // update in database
-        cache.update(workOrder); // update cache
+        //cache.update(workOrder); // update cache
 
         OperationMessage += " -|- New WorkOrder: " + server.getDatabase().searchWorkOrder(code);
         System.out.println("\nWorkOrder updated successfully.\n");

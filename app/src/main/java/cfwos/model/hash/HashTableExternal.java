@@ -33,11 +33,11 @@ public class HashTableExternal<K, V> implements InterfaceHashTableExternal<K, V>
     }
 
     // Hash function
-    int hash(K key) {
+    int hash(K key, int tableSize) {
         float A = 0.6180339887f; // Golden ratio
         float temp = (float) key.hashCode() * A; 
         temp = temp - (int) temp;
-        return (int) (M * temp);
+        return (int) (tableSize * temp);
         
     }
 
@@ -54,7 +54,7 @@ public class HashTableExternal<K, V> implements InterfaceHashTableExternal<K, V>
         // Re-hash all elements into the new table
         for (LinkedList<Node<K, V>> bucket : table) {
             for (Node<K, V> node : bucket) {
-                int newIndex = hash(node.key) % newSize;
+                int newIndex = hash(node.key, newSize);
                 newTable[newIndex].add(new Node<>(node.key, node.value));
             }
         }
@@ -69,7 +69,7 @@ public class HashTableExternal<K, V> implements InterfaceHashTableExternal<K, V>
         if (size >= M * 0.75) {
             resize();
         }
-        int index = hash(key);
+        int index = hash(key, M);
         LinkedList<Node<K, V>> bucket = table[index];
 
         for (Node<K, V> node : bucket) {
@@ -90,7 +90,7 @@ public class HashTableExternal<K, V> implements InterfaceHashTableExternal<K, V>
 
     // Buscar valor por chave
     public V search(K key) {
-        int index = hash(key);
+        int index = hash(key, M);
         LinkedList<Node<K, V>> bucket = table[index];
 
         for (Node<K, V> node : bucket) {
@@ -105,7 +105,7 @@ public class HashTableExternal<K, V> implements InterfaceHashTableExternal<K, V>
 
     // Remove key
     public void remove(K key) {
-        int index = hash(key);
+        int index = hash(key, M);
         LinkedList<Node<K, V>> bucket = table[index];
 
         bucket.removeIf(node -> node.key.equals(key));

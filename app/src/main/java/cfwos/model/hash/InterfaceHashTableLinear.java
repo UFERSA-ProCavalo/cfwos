@@ -6,6 +6,8 @@ public interface InterfaceHashTableLinear<K> {
 
     K search(K key);
 
+    K search(int key);
+
     void remove(K key);
 
     void show();
