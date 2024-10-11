@@ -2,22 +2,30 @@ package cfwos.model.hash;
 
 import java.util.Random;
 
-public class HashTableLinear<K> implements InterfaceHashTableLinear<K> {
+public class HashTableLinear<K, V> implements InterfaceHashTableLinear<K, V> {
 
     int M;
     int size;
-    K[] table;
-    boolean[] deleted;
     Random random;
     int collisionCounter = 0;
     String collisionMessage = "";
+    Node<K, V>[] table;
+    // internal Node class
+    static class Node<K, V> {
+        K key;
+        V val;
+
+        Node(K key, V val) {
+            this.key = key;
+            this.val = val;
+        }
+    }
 
     // Constructor
     @SuppressWarnings("unchecked")
     public HashTableLinear(int size) {
         this.M = size;
-        this.table = (K[]) new Object[M];
-        this.deleted = new boolean[M];
+        this.table = new Node[M];
         this.size = 0;
         this.random = new Random();
 
@@ -31,15 +39,6 @@ public class HashTableLinear<K> implements InterfaceHashTableLinear<K> {
         float temp = (float) key.hashCode() * A;
         temp = temp - (int) temp;
         return (int) (M * temp);
-
-    }
-
-    // Hash for code only
-    int hash(int key) {
-        float A = 0.6180339887f; // Golden ratio
-        float temp = (float) key * A;
-        temp = temp - (int) temp;
-        return (int) (M * temp);
     }
 
     //
@@ -49,122 +48,87 @@ public class HashTableLinear<K> implements InterfaceHashTableLinear<K> {
 
     // Insert key
     @Override
-    public void insert(K key) {
+    public void insert(K key, V val) {
         // int k = hash(key);
-        int k = random();
-        // int index = k; // Save the initial index to prevent infinite loop
-        // int attempts = 0;
+        int h = random();
+        Node<K, V> node = table[h];
 
         // Tentativa linear
-        while ((table[k] != null) && (!deleted[k])) {
-            if (table[k].equals(key)) {
+        while ((table[h] != null)) {
+            if (node.key.equals(key)) {
                 return;
             }
-            System.out.println("Collision at { index " + k + " with key -> " + key.hashCode() + "} ");
-            k = (k + 1) % M;
-
+            System.out.println("Collision at { index " + h + " with key -> " + key.hashCode() + "} ");
+            h = (h + 1) % M;
+            
             // collisionCounter = collisionCounter + 1;
             // collisionMessage+= "Collision at { index " + table[k] + " with key -> " + key
             // + "} ";
         }
-        System.out.println("Inserted key at index: " + k);
-
-        table[k] = key;
-        deleted[k] = false;
+        System.out.println("Inserted key " + key + " at index: " + h);
+        node = new Node<>(key, val);
+        table[h] = node;
         size++;
     }
 
-    //search code only
-    @Override
-    public K search(int key) {
-        int k = hash(key);
-        // int index = k; // Save the initial index to prevent infinite loop
-        int attempts = 0;
-
-        // Tentativa linear
-        while (table[k] != null || deleted[k]) {
-            if ((table[k] != null) && (table[k].equals(key)) && (!deleted[k])) {
-                return table[k];
-            }
-            k = (k + 1) % M;
-
-            attempts++;
-            if (attempts >= M) {
-                return null;
-            }
-        }
-
-        return null;
+    public void insert_after_collision(int h, K key, V val) {
+        System.out.println("Inserted key " + key + " at index: " + h);
+        Node<K, V> node = new Node<>(key, val);
+        table[h] = node;
+        size++;
     }
 
     // Search key
     @Override
-    public K search(K key) {
-        int k = hash(key);
+    public V search(K key) {
+        int h = hash(key);
+        Node<K, V> node =  table[h];
         // int index = k; // Save the initial index to prevent infinite loop
         int attempts = 0;
 
         // Tentativa linear
         while (attempts < M) {
-            if ((table[k] != null) && (table[k].equals(key)) && (!deleted[k])) {
-                return table[k];
+            if ((node != null) && (node.key.equals(key))) {
+                return node.val;
             }
-            k = (k + 1) % M;
+            h = (h + 1) % M;
             attempts++;
         }
 
         return null;
-    }
-
-    public int searchForIndividualRemove(K key) {
-        int k = hash(key);
-        // int index = k; // Save the initial index to prevent infinite loop
-        int attempts = 0;
-
-        // Tentativa linear
-        while (attempts < M) {
-            if ((table[k] != null) && (table[k].equals(key)) && (!deleted[k])) {
-                return k;
-            }
-            k = (k + 1) % M;
-            attempts++;
-        }
-
-        return -1;
     }
 
     // Remove key
     @Override
     public void remove(K key) {
-        int removed = searchForIndividualRemove(key);
-        if (removed != -1) {
-            table[removed] = null;
-            deleted[removed] = true;
+        int k = hash(key);
+        V removed = search(key);
+        if (removed != null) {
+            table[k].val = null;
             size--;
             System.out.println("Removed key at index: " + removed);
         }
-
         return;
     }
 
     // Remove random key
-    public void removeRandom() {
-        int k = random();
+    public int removeRandom() {
+        int h = random();
 
         // Tentativa aleatória
-        while (table[k] == null || deleted[k]) {
-            k = random();
+        while (table[h] == null) {
+            h = random();
         }
 
-        table[k] = null;
-        deleted[k] = true;
+        table[h] = null;
         size--;
 
-        System.out.println("Removed key at index: " + k);
+        System.out.println("Removed key at index: " + h);
+        return h;
     }
 
     // Update key
-    public void update(K key) {
+    public void update(K key, V val) {
         int k = hash(key);
 
         // Tentativa linear
@@ -175,16 +139,15 @@ public class HashTableLinear<K> implements InterfaceHashTableLinear<K> {
             k = (k + 1) % M;
         }
 
-        table[k] = key;
-        deleted[k] = false;
+        table[k].val = val;
         size++;
     }
 
     // Show table
     public void show() {
         for (int i = 0; i < M; i++) {
-            if (table[i] != null && !deleted[i]) {
-                System.out.println("[" + i + "] -> " + table[i]);
+            if (table[i] != null) {
+                System.out.println("[" + i + "] -> " + table[i].val);
             } else {
                 System.out.println("[" + i + "] -> null");
             }

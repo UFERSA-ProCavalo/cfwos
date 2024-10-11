@@ -1,12 +1,10 @@
 package cfwos.model.hash;
 
-public interface InterfaceHashTableLinear<K> {
+public interface InterfaceHashTableLinear<K, V> {
 
-    void insert(K key);
+    void insert(K key, V val);
 
-    K search(K key);
-
-    K search(int key);
+    V search(K key);
 
     void remove(K key);
 

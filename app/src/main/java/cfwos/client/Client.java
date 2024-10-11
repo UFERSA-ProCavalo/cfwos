@@ -13,15 +13,15 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
 public class Client {
-    //private CacheFIFO<WorkOrder> cache;
-    private CacheRANDOM<WorkOrder> cache;
+    // private CacheFIFO<WorkOrder> cache;
+    private CacheRANDOM<Integer, WorkOrder> cache;
     private Server server;
     private Scanner scanner;
     private String OperationMessage;
     public String name;
 
     public Client(Scanner scanner, Server server, String name) {
-        //this.cache = new CacheFIFO<>();
+        // this.cache = new CacheFIFO<>();
         this.cache = new CacheRANDOM<>();
         this.server = server;
         this.scanner = scanner;
@@ -41,11 +41,10 @@ public class Client {
          * If it is, we return
          * If it isn't, we continue to check if it is in the database
          */
-        if (isInCache(code, new WorkOrder(code, null, null))) {
+        if (isInCache(code)) {
             System.out.println("WorkOrder already exists in cache. \n"
-                    + "WorkOder: " + cache.get(new WorkOrder(code, null, null)) + "\n\n"
+                    + "WorkOder: " + cache.get(code) + "\n\n"
                     + "Did you mean to update it?");
-
             return;
         }
 
@@ -53,8 +52,7 @@ public class Client {
             System.out.println("WorkOrder already exists in the database. \n"
                     + "WorkOder: " + server.getDatabase().searchWorkOrder(code) + "\n\n"
                     + "Did you mean to update it?");
-            //cache.add(server.getDatabase().searchWorkOrder(code)); // add to cache
-
+            // cache.add(server.getDatabase().searchWorkOrder(code)); // add to cache
             return;
         }
 
@@ -72,17 +70,17 @@ public class Client {
         // String timestamp = scanner.nextLine();
 
         WorkOrder workOrder = new WorkOrder(code, name, description, timestamp);
-        //cache.add(workOrder); // add to cache
+        // cache.add(workOrder); // add to cache
 
         OperationMessage = " | WorkOrder inserted: " + workOrder;
-        //int oldBalance = server.getDatabase().getBalanceCounter();
-        //int newBalance = oldBalance;
+        // int oldBalance = server.getDatabase().getBalanceCounter();
+        // int newBalance = oldBalance;
 
         server.getDatabase().addWorkOrder(code, name, description, timestamp); // add to database
         String CollisionMessage = server.getDatabase().getCollisionMessage();
 
-        //newBalance = server.getDatabase().getBalanceCounter();
-        //boolean isUnbalanced = (oldBalance != newBalance);
+        // newBalance = server.getDatabase().getBalanceCounter();
+        // boolean isUnbalanced = (oldBalance != newBalance);
         System.out.println("\nWorkOrder inserted successfully.\n");
         LoggerUpdate(OperationMessage, CollisionMessage);
 
@@ -98,16 +96,16 @@ public class Client {
         scanner.nextLine(); // Consume the newline character
 
         OperationMessage = " | WorkOrder removed: " + server.getDatabase().searchWorkOrder(code);
-        //int oldBalance = server.getDatabase().getBalanceCounter();
-        //int newBalance = oldBalance;
+        // int oldBalance = server.getDatabase().getBalanceCounter();
+        // int newBalance = oldBalance;
 
         /*
          * CHECKS IF THE WORKORDER IS IN THE CACHE
          * If it is, we remove it from the cache and the database, then return
          * If it isn't, we continue to check if it is in the database
          */
-        if (isInCache(code, new WorkOrder(code, null, null))) {
-            cache.remove(new WorkOrder(code, null, null)); // remove from cache
+        if (isInCache(code)) {
+            cache.remove(code); // remove from cache
             server.getDatabase().removeWorkOrder(code); // remove from database
 
         } else if (isInDatabase(code)) {
@@ -118,8 +116,8 @@ public class Client {
             return;
         }
 
-        //newBalance = server.getDatabase().getBalanceCounter();
-        //boolean isUnbalanced = (oldBalance != newBalance);
+        // newBalance = server.getDatabase().getBalanceCounter();
+        // boolean isUnbalanced = (oldBalance != newBalance);
         System.out.println("\nWorkOrder removed successfully.\n");
 
         server.getDatabase().getCollisionMessage();
@@ -143,8 +141,8 @@ public class Client {
          * If it is, we remove it from the cache, then proceed to update it
          * If it isn't, we continue to check if it is in the database
          */
-        if (isInCache(code, new WorkOrder(code, null, null))) {
-            //cache.remove(new WorkOrder(code, null, null)); // remove from cache
+        if (isInCache(code)) {
+            System.out.println("WorkOrder found in cache: " + cache.get(code));
         } else if (!isInDatabase(code)) {
             System.out.println("WorkOrder not found in the database.\n");
 
@@ -161,10 +159,10 @@ public class Client {
 
         String timestamp = ValidateDateInput();
 
-        //WorkOrder workOrder = new WorkOrder(code, name, description, timestamp);
+        WorkOrder workOrder = new WorkOrder(code, name, description, timestamp);
 
-        server.getDatabase().updateWorkOrder(code, name, description, timestamp); // update in database
-        //cache.update(workOrder); // update cache
+        server.getDatabase().updateWorkOrder(code, workOrder); // update in database
+        cache.update(code, workOrder);; // update cache
 
         OperationMessage += " -|- New WorkOrder: " + server.getDatabase().searchWorkOrder(code);
         System.out.println("\nWorkOrder updated successfully.\n");
@@ -181,9 +179,9 @@ public class Client {
         int code = ValidateCodeInput();
         scanner.nextLine(); // Consume the newline character
 
-        if (isInCache(code, new WorkOrder(code, null, null))) {
-            String.format("WorkOrder found in cache: %s", cache.get(new WorkOrder(code, null, null)));
-            System.out.println("WorkOrder found in cache: " + cache.get(new WorkOrder(code, null, null)));
+        if (isInCache(code)) {
+            String.format("WorkOrder found in cache: %s", cache.get(code));
+            //System.out.println("WorkOrder found in cache: " + cache.get(code));
 
             return;
         }
@@ -191,7 +189,7 @@ public class Client {
         if (isInDatabase(code)) {
             String.format("WorkOrder found in the database: %s", server.getDatabase().searchWorkOrder(code));
             System.out.println("WorkOrder found in the database: " + server.getDatabase().searchWorkOrder(code));
-            cache.add(server.getDatabase().searchWorkOrder(code)); // add to cache
+            cache.add(code,server.getDatabase().searchWorkOrder(code)); // add to cache
 
             return;
         }
@@ -213,16 +211,6 @@ public class Client {
     }
 
     /*
-     * GET CACHE
-     */
-    // public CacheFIFO<WorkOrder> getCache() {
-    //     return cache;
-    // }
-    public CacheRANDOM<WorkOrder> getCache() {
-        return cache;
-    }
-    
-    /*
      * LIST WORKORDER COUNT
      */
     public void listWorkOrderCount() {
@@ -236,8 +224,8 @@ public class Client {
     /*
      * Checks if the WorkOrder is in the cache
      */
-    private boolean isInCache(int code, WorkOrder workOrder) {
-        if (cache.get(workOrder) != null) {
+    private boolean isInCache(int code) {
+        if (cache.get(code) != null) {
             return true;
         }
         return false;
@@ -256,21 +244,17 @@ public class Client {
     /*
      * LOGGING METHOD
      */
-    // public void LoggerUpdate(String message, boolean isCollision) {
-    //     String logMessage = "Tree Height: " + server.getDatabase().getTreeHeight()
-    //             + " | Tree Size: " + server.getDatabase().getSize()
-    //             + " | Rotation in the AVL tree: " + (isCollision ? "Yes" : "No")
-    //             + " | " + message;
     public void LoggerUpdate(String message, String CollisionMessage) {
         String logMessage = "Cache Size: " + cache.getSize()
                 + " | Database Size: " + server.getDatabase().getSize()
-                + " | Collision in the database: " + (CollisionMessage != null ? "Yes, " + CollisionMessage : "No collision")
+                + " | Collision in the database: "
+                + (CollisionMessage != null ? "Yes, " + CollisionMessage : "No collision")
                 + " | " + message;
 
         // Log the constructed message using the logger
         server.log("INFO", logMessage);
     }
-    
+
     public void LoggerUpdate(String message) {
         String logMessage = "Cache Size: " + cache.getSize()
                 + " | Database Size: " + server.getDatabase().getSize()
@@ -302,34 +286,22 @@ public class Client {
     }
 
     /*
-     * INSERT 20 ENTRIES
-     * Made to fill the cache and test its policy (FIFO)
-     */
-    // public void insert20Entries() {
-    //     int oldBalance;
-    //     int newBalance;
-    //     boolean isUnbalanced = false;
-    //     for (int i = 61; i < 80; i++) {
-    //         WorkOrder workOrder = new WorkOrder(i, "WorkOrder" + i, "Description" + i);
-    //         cache.add(workOrder);
-    //         oldBalance = server.getDatabase().getBalanceCounter();
-    //         server.getDatabase().addWorkOrder(i, "WorkOrder" + i, "Description" + i);
-    //         newBalance = server.getDatabase().getBalanceCounter();
-    //         isUnbalanced = (oldBalance != newBalance);
-    //         OperationMessage = " | WorkOrder inserted: " + workOrder;
-    //         LoggerUpdate(OperationMessage, isUnbalanced);
-    //     }
-    // }
-    /*
      * SEARCH 20 ENTRIES
-     * Made to fill for the cache and test its policy (RANDOM) and colision treatment
+     * Made to fill for the cache and test its policy (RANDOM) and colision
+     * treatment
      */
-    public void search20Entries(){
-        for (int i = 0; i < 20; i++) {
-            WorkOrder workOrder = new WorkOrder(i, "WorkOrder" + i, "Description" + i);
-            cache.add(workOrder);
+    //do 20 random searches of existing WorkOrders in the database and add them to the cache
+    public void search20Entries() {
+        for (int i = 0; i < 20;) {
+            int code = (int) (Math.random() * 100);
+            if (isInCache(code)) {
+                continue;
+            }
+            if (isInDatabase(code)) {
+                cache.add(code, server.getDatabase().searchWorkOrder(code));
+                i++;
+            }
         }
-        cache.showCache();
     }
 
     /*
@@ -369,7 +341,7 @@ public class Client {
     private int ValidateCodeInput() {
         int code;
         while (true) {
-            
+
             try {
                 code = scanner.nextInt();
                 if (code < 0) {

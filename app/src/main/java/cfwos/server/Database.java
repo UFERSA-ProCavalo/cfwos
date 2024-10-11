@@ -12,29 +12,26 @@ public class Database{
     }
 
     public void addWorkOrder(int code, String name, String description) {
-        WorkOrder workOrder = new WorkOrder(code, name, description);
-        database.insert(code, workOrder);
+        WorkOrder new_workOrder = new WorkOrder(code, name, description);
+        database.insert(code, new_workOrder);
         
     }
 
     public void addWorkOrder(int code, String name, String description, String timestamp) {
-        WorkOrder workOrder = new WorkOrder(code, name, description, timestamp);
-        database.insert(code, workOrder);
+        WorkOrder new_workOrder = new WorkOrder(code, name, description, timestamp);
+        database.insert(code, new_workOrder);
     }
 
     public void removeWorkOrder(int code) {
         database.remove(code);
     }
 
-    public void updateWorkOrder(int code, String name, String description, String timestamp) {
+    public void updateWorkOrder(int code, WorkOrder workOrder) {
         WorkOrder temp = database.search(code);
         if (temp == null) {
             return;
         }
-        temp.setName(name);
-        temp.setDescription(description);
-        temp.setTimestamp(timestamp);
-        //database.Insert(code, workOrder);
+        temp = workOrder;
     }
 
     public WorkOrder searchWorkOrder(int code) {
