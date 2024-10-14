@@ -1,4 +1,4 @@
-package cfwos.model.hash;
+package cfwos.model.database;
 
 public interface InterfaceHashTableExternal<K, V> {
 

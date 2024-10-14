@@ -1,4 +1,4 @@
-package cfwos.model.hash;
+package cfwos.model.cache;
 
 import java.util.Random;
 
@@ -25,7 +25,7 @@ public class HashTableLinear<K, V> implements InterfaceHashTableLinear<K, V> {
     @SuppressWarnings("unchecked")
     public HashTableLinear(int size) {
         this.M = size;
-        this.table = new Node[M];
+        this.table = (Node<K, V>[]) new Node[M];
         this.size = 0;
         this.random = new Random();
 

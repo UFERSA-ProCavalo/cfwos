@@ -1,4 +1,4 @@
-package cfwos.model.hash;
+package cfwos.model.cache;
 
 public interface InterfaceHashTableLinear<K, V> {
 

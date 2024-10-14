@@ -1,4 +1,4 @@
-package cfwos.model.hash;
+package cfwos.model.database;
 
 import java.util.LinkedList;
 

@@ -1,8 +1,6 @@
-package cfwos.server;
+package cfwos.model.database;
 
-import cfwos.model.entity.WorkOrder;
-//import cfwos.model.tree.TreeAVL;
-import cfwos.model.hash.HashTableExternal;
+import cfwos.model.WorkOrder;
 
 public class Database{
     private HashTableExternal<Integer, WorkOrder> database;

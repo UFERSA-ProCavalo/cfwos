@@ -1,4 +1,4 @@
-package cfwos.model.entity;
+package cfwos.model;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

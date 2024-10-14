@@ -1,6 +1,4 @@
-package cfwos.cache;
-
-import cfwos.model.hash.HashTableLinear;
+package cfwos.model.cache;
 
 public class CacheRANDOM<K, V> {
     private static final int MAX_SIZE = 20;

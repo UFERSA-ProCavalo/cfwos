@@ -1,5 +1,6 @@
 package cfwos.server;
 
+import cfwos.model.database.Database;
 import cfwos.util.Logger;
 
 public class Server {

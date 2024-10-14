@@ -3,9 +3,8 @@ package cfwos.client;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
-import cfwos.model.entity.WorkOrder;
-//import cfwos.cache.CacheFIFO;
-import cfwos.cache.CacheRANDOM;
+import cfwos.model.WorkOrder;
+import cfwos.model.cache.CacheRANDOM;
 import cfwos.server.Server;
 
 import java.time.LocalDateTime;
