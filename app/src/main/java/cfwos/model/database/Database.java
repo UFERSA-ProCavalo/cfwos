@@ -20,6 +20,10 @@ public class Database{
         database.insert(code, new_workOrder);
     }
 
+    public void addWorkOrder(WorkOrder workOrder) {
+        database.insert(workOrder.getCode(), workOrder);
+    }
+
     public void removeWorkOrder(int code) {
         database.remove(code);
     }
@@ -61,5 +65,9 @@ public class Database{
     // }
     public String getCollisionMessage() {
         return database.getCollision();
+    }
+
+    public boolean isInDatabase(int code) {
+        return database.contains(code);
     }
 }

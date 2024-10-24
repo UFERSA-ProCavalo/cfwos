@@ -85,7 +85,7 @@ public class App {
                         server.getDatabase().addWorkOrder(i, "WorkOrder" + i, "Description" + i);
                         String message = " | WorkOrder inserted: " + server.getDatabase().searchWorkOrder(i);
                         String CollisionMessage = server.getDatabase().getCollisionMessage();
-                        client.LoggerUpdate(message, CollisionMessage);
+                        //client.LoggerUpdate(message, CollisionMessage);
                 }
         }
 }

@@ -1,9 +1,10 @@
 package cfwos.model;
 
+import java.io.Serializable; // Importando a interface Serializable
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
-public class WorkOrder {
+public class WorkOrder implements Serializable { // Implementando Serializable
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
     private int code;
     private String name;
@@ -70,7 +71,7 @@ public class WorkOrder {
 
     @Override
     public int hashCode() {
-    return Integer.hashCode(code);
+        return Integer.hashCode(code);
     }
 
     @Override
@@ -83,4 +84,22 @@ public class WorkOrder {
                 '}';
     }
 
+    public static WorkOrder fromString(String str) {
+        if (str == null || !str.startsWith("WorkOrder{") || !str.endsWith("}")) {
+            throw new IllegalArgumentException("Invalid string format 1");
+        }
+
+        str = str.substring(10, str.length() - 1); // Remove "WorkOrder{" e "}"
+        String[] parts = str.split(", ");
+        if (parts.length != 4) {
+            throw new IllegalArgumentException("Invalid string format 2");
+        }
+
+        int code = Integer.parseInt(parts[0].split("=")[1]);
+        String name = parts[1].split("=")[1].replace("'", "");
+        String description = parts[2].split("=")[1].replace("'", "");
+        String timestamp = parts[3].split("=")[1].replace("'", "");
+
+        return new WorkOrder(code, name, description, timestamp);
+    }
 }

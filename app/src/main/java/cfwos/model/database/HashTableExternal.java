@@ -139,4 +139,17 @@ public class HashTableExternal<K, V> implements InterfaceHashTableExternal<K, V>
         return null;
 
     }
+
+    public boolean contains(K key) {
+        int index = hash(key, M);
+        LinkedList<Node<K, V>> bucket = table[index];
+
+        for (Node<K, V> node : bucket) {
+            if (node.key.equals(key)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
