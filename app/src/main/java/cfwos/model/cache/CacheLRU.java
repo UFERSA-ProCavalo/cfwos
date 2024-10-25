@@ -2,7 +2,7 @@ package cfwos.model.cache;
 
 public class CacheLRU<K, V> {
 
-    private static final int MAX_SIZE = 30;
+    private static final int MAX_SIZE = 3;
     private AutoAdjustedList<K, V> list;
 
     public CacheLRU() {
@@ -10,8 +10,9 @@ public class CacheLRU<K, V> {
     }
 
     public void add(K key, V val) {
-        if (list.getSize() == MAX_SIZE)
+        if (list.getSize() == MAX_SIZE){
             list.removeLRU();
+        }
         list.insert(key, val);
     }
 
@@ -28,7 +29,7 @@ public class CacheLRU<K, V> {
     }
 
     public void showCache() {
-        list.show();
+        list.showCache();
     }
 
     public int getSize() {

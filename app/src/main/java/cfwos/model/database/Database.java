@@ -6,7 +6,7 @@ public class Database{
     private HashTableExternal<Integer, WorkOrder> database;
 
     public Database() {
-        this.database = new HashTableExternal<>(100);
+        this.database = new HashTableExternal<>(17);
     }
 
     public void addWorkOrder(int code, String name, String description) {
@@ -44,30 +44,16 @@ public class Database{
         database.show();
     }
 
-    // public void showDatabaseReverse() {
-    //     database.ShowReverse();
-    // }
-
-    // public int getTreeHeight() {
-    //     return database.getTreeHeight();
-    // }
 
     public int getSize() {
         return database.getSize();
     }
 
-    // public int getBalanceCounter() {
-    //     return database.getBalanceCounter();
-    // }
-
-    // public List<Collision<Integer>> getCollisions() {
-    //     return database.getCollisions();
-    // }
     public String getCollisionMessage() {
         return database.getCollision();
     }
 
     public boolean isInDatabase(int code) {
-        return database.contains(code);
+        return database.Contains(code);
     }
 }

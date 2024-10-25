@@ -1,5 +1,6 @@
-package cfwos;
+package cfwos.model;
 
+import cfwos.model.compression.HuffmanTree;
 import cfwos.util.Util;
 
 public class Datagram {
@@ -9,10 +10,17 @@ public class Datagram {
     private String[] huffmanCodes;
     private HuffmanTree huffmanTree;
 
-    public Datagram(String operation, String compressedData, String[] huffmanCodes) {
+    public Datagram(String operation, String compressedData) {
         this.operation = operation;
         this.compressedData = compressedData;
-        this.huffmanCodes = huffmanCodes;
+        this.huffmanCodes = null;
+        this.huffmanTree = new HuffmanTree();
+    }
+
+    public Datagram(String operation){
+        this.operation = operation;
+        this.compressedData = "";
+        this.huffmanCodes = null;
         this.huffmanTree = new HuffmanTree();
     }
 
@@ -28,7 +36,11 @@ public class Datagram {
         return huffmanCodes;
     }
 
-    public Datagram compress(){
+    public HuffmanTree getHuffmanTree() {
+        return huffmanTree;
+    }
+
+    public Datagram compress() {
         Util.FrequencyTable frequencyTable = new Util.FrequencyTable(compressedData.length());
 
         // Calcular a frequência dos caracteres
@@ -44,13 +56,13 @@ public class Datagram {
         huffmanCodes = huffmanTree.generateHuffmanCodes();
 
         compressedData = huffmanTree.compress(compressedData, huffmanCodes);
-        System.out.println("Compressed data: " + compressedData);
+        //System.out.println("Compressed data: " + compressedData);
         return this;
     }
 
-    public Datagram decompress(){
+    public Datagram decompress(HuffmanTree huffmanTree) {
         String decompressedData = huffmanTree.decompress(compressedData);
-        System.out.println("Decompressed data: " + decompressedData);
+        //System.out.println("Decompressed data: " + decompressedData);
         compressedData = decompressedData;
         return this;
     }

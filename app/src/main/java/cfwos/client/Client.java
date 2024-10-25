@@ -3,14 +3,10 @@ package cfwos.client;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
-import cfwos.Datagram;
-import cfwos.HuffmanTree;
+import cfwos.model.Datagram;
 import cfwos.model.WorkOrder;
 import cfwos.model.cache.CacheLRU;
 import cfwos.server.Server;
-import cfwos.util.Util;
-import cfwos.util.Util.FrequencyTable;
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -40,28 +36,16 @@ public class Client {
             handleExistingWorkOrderInCache(code);
             return;
         }
-
-        if (isInDatabase(code)) {
+        if (server.getDatabase().isInDatabase(code)) {
             handleExistingWorkOrderInDatabase(code);
             return;
         }
 
         WorkOrder workOrder = createNewWorkOrder(code);
-        // Datagram datagram = new Datagram("insert", workOrder);
-        
-        // datagram.compress();
-        // System.out.println("Compressed data: " + datagram.getCompressedData());
-        // System.out.println("Huffman codes: " + datagram.getHuffmanCodes());
-        
-        // datagram.decompress();
 
-        // WorkOrder workOrderDecompressed = (WorkOrder) datagram.deserializeObject();
-        // System.out.println("Decompressed data: " + workOrderDecompressed);
-        // server.processDatagram(datagram);
+        sendDatagram("INSERT", workOrder);
+        receiveDatagram(server.response);
 
-        cache.add(code, workOrder);
-        server.getDatabase().addWorkOrder(workOrder);
-        System.out.println("\nWorkOrder inserted successfully.\n");
         logOperation("Inserted WorkOrder: " + workOrder);
     }
 
@@ -71,20 +55,22 @@ public class Client {
     public void removeWorkOrder() {
         System.out.print("Enter WorkOrder ID to remove: ");
         int code = validateCodeInput();
-        scanner.nextLine(); // Consume the newline character
+        scanner.nextLine();
 
         if (cache.isInCache(code)) {
+            System.out.println("WorkOrder found in cache: " + cache.get(code));
             cache.remove(code);
-            server.getDatabase().removeWorkOrder(code);
-        } else if (isInDatabase(code)) {
-            server.getDatabase().removeWorkOrder(code);
-        } else {
+        } else if (!server.getDatabase().isInDatabase(code)) {
             System.out.println("WorkOrder not found in the database.\n");
             return;
         }
 
+        WorkOrder removedWorkOrder = server.getDatabase().searchWorkOrder(code);
+        sendDatagram("REMOVE", removedWorkOrder);
+        receiveDatagram(server.response);
+
         System.out.println("\nWorkOrder removed successfully.\n");
-        logOperation("Removed WorkOrder with ID: " + code);
+        logOperation("Removed WorkOrder: " + removedWorkOrder);
     }
 
     /*
@@ -93,20 +79,24 @@ public class Client {
     public void updateWorkOrder() {
         System.out.print("Enter WorkOrder ID to update: ");
         int code = validateCodeInput();
-        scanner.nextLine(); // Consume the newline character
+        scanner.nextLine();
 
         if (cache.isInCache(code)) {
             System.out.println("WorkOrder found in cache: " + cache.get(code));
-        } else if (!isInDatabase(code)) {
+        } else if (!server.getDatabase().isInDatabase(code)) {
             System.out.println("WorkOrder not found in the database.\n");
             return;
         }
 
+        WorkOrder oldWorkOrder = server.getDatabase().searchWorkOrder(code);
         WorkOrder updatedWorkOrder = createNewWorkOrder(code);
-        server.getDatabase().updateWorkOrder(code, updatedWorkOrder);
+
+        sendDatagram("UPDATE", updatedWorkOrder);
+        receiveDatagram(server.response);
+
         cache.update(code, updatedWorkOrder);
         System.out.println("\nWorkOrder updated successfully.\n");
-        logOperation("Updated WorkOrder with ID: " + code);
+        logOperation("Updated WorkOrder: " + oldWorkOrder + " | to: " + updatedWorkOrder);
     }
 
     /*
@@ -115,17 +105,23 @@ public class Client {
     public void searchWorkOrder() {
         System.out.print("Enter WorkOrder ID to search: ");
         int code = validateCodeInput();
-        scanner.nextLine(); // Consume the newline character
+        scanner.nextLine();
 
         if (cache.isInCache(code)) {
             System.out.println("WorkOrder found in cache: " + cache.get(code));
             return;
         }
 
-        if (isInDatabase(code)) {
-            System.out.println("WorkOrder found in the database: " + server.getDatabase().searchWorkOrder(code));
-            cache.add(code, server.getDatabase().searchWorkOrder(code));
+        WorkOrder searchedWorkOrder = server.getDatabase().searchWorkOrder(code);
+        sendDatagram("SEARCH", searchedWorkOrder);
+        receiveDatagram(server.response);
+
+        if (searchedWorkOrder != null) {
+            cache.add(code, searchedWorkOrder);
+            System.out.println("WorkOrder found: " + searchedWorkOrder);
+            logOperation("Searched WorkOrder: " + searchedWorkOrder);
             return;
+
         }
 
         System.out.println("WorkOrder not found.");
@@ -136,7 +132,8 @@ public class Client {
      */
     public void listWorkOrders() {
         System.out.println("Listing existing WorkOrders:");
-        server.getDatabase().showDatabase();
+        sendDatagram("LIST", null);
+        receiveDatagram(server.response);
     }
 
     /*
@@ -144,22 +141,89 @@ public class Client {
      */
     public void listWorkOrderCount() {
         System.out.println("WorkOrder count: " + server.getDatabase().getSize());
+        sendDatagram("COUNT", null);
+        receiveDatagram(server.response);
     }
 
     /*
      * AUXILIARY METHODS
      */
-    private boolean isInDatabase(int code) {
-        return server.getDatabase().searchWorkOrder(code) != null;
+    /*
+     * Check if the WorkOrder is in the database
+     */
+    public void sendDatagram(String operation, WorkOrder workOrder) {
+        String Uncompressed;
+        String Compressed;
+        Datagram datagram = null;
+
+        if (workOrder == null) {
+            datagram = new Datagram(operation, operation);
+        } else {
+            datagram = new Datagram(operation, workOrder.toString());
+        }
+
+        Uncompressed = datagram.getCompressedData();
+        datagram.compress();
+
+        Compressed = datagram.getCompressedData();
+
+        server.processDatagram(datagram, datagram.getHuffmanTree());
+
+        // Mensagens organizadas para facilitar a visualização
+        System.out.println("================REQUEST================\n");
+        System.out.println("Uncompressed request:\n" + Uncompressed + "\n");
+        System.out.println("Compressed request:\n" + Compressed + "\n");
+    }
+
+    public void receiveDatagram(Datagram datagram) {
+        String Uncompressed;
+        String Compressed;
+
+        Datagram received = datagram;
+        Compressed = received.getCompressedData();
+
+        received.decompress(received.getHuffmanTree());
+
+        Uncompressed = received.getCompressedData();
+
+        System.out.println("================RESPONSE================\n");
+        System.out.println("Compressed response:\n" + Compressed + "\n");
+        System.out.println("Uncompressed response:\n" + Uncompressed + "\n");
+        System.out.println("========================================\n");
     }
 
     /*
      * LOGGING METHOD
      */
+    /*
+     * LOGGING METHOD
+     */
+    public void LoggerUpdate(String message, String collisionMessage) {
+        String logMessage = "Cache Size: " + cache.getSize()
+                + " | Database Size: " + server.getDatabase().getSize()
+                + " | " + message;
+
+        if (collisionMessage != null) {
+            logMessage += " | Collision in the database: Yes, " + collisionMessage;
+        } else {
+            logMessage += " | Collision in the database: No collision";
+        }
+
+        server.log("INFO", logMessage);
+    }
+
     private void logOperation(String message) {
         String logMessage = "Cache Size: " + cache.getSize() +
                 " | Database Size: " + server.getDatabase().getSize() +
                 " | " + message;
+        server.log("INFO", logMessage);
+    }
+
+    public void LoggerUpdate(String message) {
+        String logMessage = "Cache Size: " + cache.getSize()
+                + " | Database Size: " + server.getDatabase().getSize()
+                + " | " + message;
+
         server.log("INFO", logMessage);
     }
 
@@ -173,13 +237,14 @@ public class Client {
             return;
         }
         System.out.println("\nListing Cache:\n");
+        System.out.println(cache.getSize());
         cache.showCache();
     }
 
     public void search20Entries() {
         for (int i = 0; i < 20;) {
             int code = (int) (Math.random() * 100);
-            if (!cache.isInCache(code) && isInDatabase(code)) {
+            if (!cache.isInCache(code) && server.getDatabase().isInDatabase(code)) {
                 cache.add(code, server.getDatabase().searchWorkOrder(code));
                 i++;
             }
@@ -242,11 +307,9 @@ public class Client {
 
     private void handleExistingWorkOrderInCache(int code) {
         System.out.println("WorkOrder already exists in cache: " + cache.get(code));
-        // Optionally prompt for update
     }
 
     private void handleExistingWorkOrderInDatabase(int code) {
         System.out.println("WorkOrder already exists in the database: " + server.getDatabase().searchWorkOrder(code));
-        // Optionally prompt for update
     }
 }

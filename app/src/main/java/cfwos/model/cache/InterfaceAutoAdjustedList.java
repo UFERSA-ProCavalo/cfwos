@@ -8,11 +8,9 @@ public interface InterfaceAutoAdjustedList<K, V> {
 
     void update(K key, V val);
 
-    void remove(K key);
+    boolean remove(K key);
 
     void removeLRU();
-
-    void show();
 
     int getSize();
 

@@ -1,4 +1,4 @@
-package cfwos;
+package cfwos.model.compression;
 
 public class MinHeap<T extends Comparable<T>> {
     private T[] heap;

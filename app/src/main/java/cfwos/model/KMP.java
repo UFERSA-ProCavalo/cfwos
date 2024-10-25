@@ -1,24 +1,24 @@
-package cfwos;
+package cfwos.model;
 
 public class KMP {
     private int[] tabelaPrefixo;
 
-    public void buscar(String padrao, String texto) {
+    public int buscar(String padrao, String texto) {
         int M = padrao.length();
         int N = texto.length();
         tabelaPrefixo = new int[M];
         int j = 0;
+        int count = 0;
 
         criarTabelaPrefixo(padrao, M);
 
-        int i = 0;
-        while (i < N) {
+        for (int i = 0; i < N; ) {
             if (padrao.charAt(j) == texto.charAt(i)) {
                 j++;
                 i++;
             }
             if (j == M) {
-                System.out.println("Padrão encontrado no índice " + (i - j));
+                count++;
                 j = tabelaPrefixo[j - 1];
             } else if (i < N && padrao.charAt(j) != texto.charAt(i)) {
                 if (j != 0) {
@@ -28,6 +28,7 @@ public class KMP {
                 }
             }
         }
+        return count;
     }
 
     private void criarTabelaPrefixo(String padrao, int M) {

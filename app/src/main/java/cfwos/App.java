@@ -2,16 +2,20 @@ package cfwos;
 
 import cfwos.server.Server;
 import cfwos.client.Client;
-
+import java.util.List;
 import java.util.Scanner;
 
 public class App {
 
+        private static Scanner scanner = null;
+        private static Server server = null;
+        private static Client client = null;
+
         public static void main(String[] args) throws Exception {
                 System.out.println("\033[2J\033[1;1H");
-                Scanner scanner = new Scanner(System.in);
-                Server server = new Server();
-                Client client = new Client(scanner, server, "Client Joaquim Barbosa");
+                scanner = new Scanner(System.in);
+                server = new Server();
+                client = new Client(scanner, server, "Client Joaquim Barbosa");
 
                 // Add 60 work orders to the server
                 App.insert60Entries(server, client);
@@ -38,7 +42,8 @@ public class App {
                         System.out.println("[4]. Search WorkOrder");
                         System.out.println("[5]. Show all WorkOrders");
                         System.out.println("[6]. List WorkOrder count");
-                        System.out.println("[7]. Exit");
+                        System.out.println("[7]. Search operations in the log");
+                        System.out.println("[8]. Exit");
                         System.out.print("Choose an option: ");
 
                         char choice = scanner.next().charAt(0);
@@ -64,6 +69,9 @@ public class App {
                                         client.listWorkOrderCount();
                                         break;
                                 case '7':
+                                        logSubMenu(scanner);
+                                        break;
+                                case '8':
                                         running = false;
                                         break;
                                 case '0':
@@ -80,12 +88,58 @@ public class App {
                 scanner.close();
         }
 
+        public static void logSubMenu(Scanner scanner) {
+                System.out.println("Log Menu:");
+                System.out.println("[1]. Inserted");
+                System.out.println("[2]. Removed");
+                System.out.println("[3]. Updated");
+                System.out.println("[4]. Searched");
+                System.out.print("Choose an option: ");
+
+                char choice = scanner.next().charAt(0);
+                System.out.println("\033[2J\033[1;1H");
+
+                String filename = "server_log.log";
+
+                List<String> foundLines;
+
+                switch (choice) {
+                        case '1':
+                                foundLines = Server.searchInLog(filename, "inserted");
+                                break;
+                        case '2':
+                                foundLines = Server.searchInLog(filename, "Removed");
+                                break;
+                        case '3':
+                                foundLines = Server.searchInLog(filename, "Updated");
+                                break;
+                        case '4':
+                                foundLines = Server.searchInLog(filename, "Searched");
+                                break;
+                        default:
+                                System.out.println("Operation not listed, please try again.");
+                                return;
+
+                }
+
+                // Display the found lines
+                if (foundLines.isEmpty()) {
+                        System.out.println("No lines found with the specified pattern.");
+                } else {
+                        System.out.println("Found lines:");
+                        for (String line : foundLines) {
+                                System.out.println(line);
+                        }
+                }
+        }
+
         public static void insert60Entries(Server server, Client client) {
-                for (int i = 0; i < 74; i++) {
+                for (int i = 1; i < 100; i++) {
                         server.getDatabase().addWorkOrder(i, "WorkOrder" + i, "Description" + i);
                         String message = " | WorkOrder inserted: " + server.getDatabase().searchWorkOrder(i);
                         String CollisionMessage = server.getDatabase().getCollisionMessage();
-                        //client.LoggerUpdate(message, CollisionMessage);
+                        client.LoggerUpdate(message, CollisionMessage);
                 }
         }
+
 }

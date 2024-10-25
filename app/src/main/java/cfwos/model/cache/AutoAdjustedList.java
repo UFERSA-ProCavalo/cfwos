@@ -2,14 +2,14 @@ package cfwos.model.cache;
 
 public class AutoAdjustedList<K, V> implements InterfaceAutoAdjustedList<K, V> {
 
-    private Node head;
-    private Node tail;
-    private int size;
+    public Node head;
+    public Node tail;
+    public int size;
 
-    class Node {
-        K key;
-        V val;
-        Node next;
+    public class Node {
+        public K key;
+        public V val;
+        public Node next;
         int frequency;
 
         public Node(K key, V val) {
@@ -27,7 +27,6 @@ public class AutoAdjustedList<K, V> implements InterfaceAutoAdjustedList<K, V> {
     }
 
     @Override
-    //InsertLast
     public void insert(K key, V val) {
         Node newNode = new Node(key, val);
         if (head == null) {
@@ -36,9 +35,13 @@ public class AutoAdjustedList<K, V> implements InterfaceAutoAdjustedList<K, V> {
         } else {
             tail.next = newNode;
             tail = newNode;
+            tail.next = null;
         }
         size++;
-        newNode.frequency++;
+        if (newNode.frequency == 0) {
+            newNode.frequency++;
+
+        }
     }
 
     @Override
@@ -74,7 +77,7 @@ public class AutoAdjustedList<K, V> implements InterfaceAutoAdjustedList<K, V> {
     }
 
     @Override
-    public void remove(K key) {
+    public boolean remove(K key) {
         Node current = head;
         Node previous = null;
         while (current != null) {
@@ -84,20 +87,28 @@ public class AutoAdjustedList<K, V> implements InterfaceAutoAdjustedList<K, V> {
                 } else {
                     head = current.next;
                 }
-                return;
+                size--;
+                return true;
             }
             previous = current;
             current = current.next;
         }
+        return false;
     }
 
     @Override
-    //Remove Least Recently Used
     public void removeLRU() {
+        if (head == null) {
+            return; // Lista está vazia, nada para remover
+        }
+
         Node current = head;
         Node previous = null;
+
+        // Encontrar o nó com a menor frequência (LRU)
         Node lru = head;
         Node previousLru = null;
+
         while (current != null) {
             if (current.frequency < lru.frequency) {
                 lru = current;
@@ -106,15 +117,22 @@ public class AutoAdjustedList<K, V> implements InterfaceAutoAdjustedList<K, V> {
             previous = current;
             current = current.next;
         }
+
+        // Remover o nó LRU (o primeiro com a menor frequência encontrado)
         if (previousLru != null) {
-            previousLru.next = lru.next;
+            previousLru.next = lru.next; // Remove o LRU ao desconectar o nó
         } else {
-            head = lru.next;
+            head = lru.next; // Caso o LRU seja o head
         }
+
+        if (lru == tail) {
+            tail = previousLru; // Caso o LRU seja o tail
+        }
+
+        size--;
     }
 
-    @Override
-    public void show() {
+    public void showCache() {
         Node current = head;
         while (current != null) {
             System.out.println("Key: " + current.key + " Value: " + current.val + " Frequency: " + current.frequency);
@@ -124,6 +142,10 @@ public class AutoAdjustedList<K, V> implements InterfaceAutoAdjustedList<K, V> {
 
     @Override
     public int getSize() {
+        return size;
+    }
+
+    public int setSize(int size) {
         return size;
     }
 

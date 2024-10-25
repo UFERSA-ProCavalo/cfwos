@@ -1,4 +1,4 @@
-package cfwos;
+package cfwos.model.compression;
 
 public class PriorityQueue<T extends Comparable<T>> {
     private MinHeap<T> minHeap;

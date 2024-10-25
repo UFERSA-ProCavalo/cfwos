@@ -1,16 +1,13 @@
 package cfwos.model.database;
 
-import java.util.LinkedList;
-
 public class HashTableExternal<K, V> implements InterfaceHashTableExternal<K, V> {
 
     private int M;
     private int size;
-    private LinkedList<Node<K, V>>[] table;
+    private AutoAdjustedList<K, V>[] table;
     int collisionCounter = 0;
     String collisionMessage = "";
 
-    // internal Node class
     static class Node<K, V> {
         K key;
         V value;
@@ -25,93 +22,99 @@ public class HashTableExternal<K, V> implements InterfaceHashTableExternal<K, V>
     @SuppressWarnings("unchecked")
     public HashTableExternal(int size) {
         this.M = size;
-        this.table = (LinkedList<Node<K, V>>[]) new LinkedList[M]; // Correctly type the array
+        this.table = (AutoAdjustedList<K, V>[]) new AutoAdjustedList[M];
         for (int i = 0; i < M; i++) {
-            table[i] = new LinkedList<>(); // Initialize each bucket
+            table[i] = new AutoAdjustedList<>();
         }
         this.size = 0;
     }
 
-    // Hash function
-    int hash(K key, int tableSize) {
-        float A = 0.6180339887f; // Golden ratio
-        float temp = (float) key.hashCode() * A; 
+    private int hash(K key, int tableSize) {
+        float A = 0.6180339887f;
+        float temp = (float) key.hashCode() * A;
         temp = temp - (int) temp;
         return (int) (tableSize * temp);
-        
     }
 
-    // reescale
+    private void ExamineLoad() {
+
+        double loadFactor = (double) size / M;
+
+        if (loadFactor >= 0.85) {
+            resize(M * 2);
+        } else {
+            if (loadFactor < 0.25) {
+                resize(bigger(M / 2, 7));
+            }
+        }
+    }
+
+    private int bigger(int a, int b) {
+        if (a > b) {
+            return a;
+        } else {
+            return b;
+        }
+    }
+
     @SuppressWarnings("unchecked")
-    private void resize() {
-        int newSize = M * 2; // Double the size of the table
-        LinkedList<Node<K, V>>[] newTable = (LinkedList<Node<K, V>>[]) new LinkedList[newSize];
+    private void resize(int newSize) {
+        AutoAdjustedList<K, V>[] newTable = (AutoAdjustedList<K, V>[]) new AutoAdjustedList[newSize];
 
         for (int i = 0; i < newSize; i++) {
-            newTable[i] = new LinkedList<>(); // Initialize the new table
+            newTable[i] = new AutoAdjustedList<>();
         }
 
-        // Re-hash all elements into the new table
-        for (LinkedList<Node<K, V>> bucket : table) {
-            for (Node<K, V> node : bucket) {
-                int newIndex = hash(node.key, newSize);
-                newTable[newIndex].add(new Node<>(node.key, node.value));
+        for (int i = 0; i < M; i++) {
+            AutoAdjustedList<K, V> bucket = table[i];
+            AutoAdjustedList.Node<K, V> current = bucket.head;
+            while (current != null) {
+                int newIndex = hash(current.key, newSize);
+                newTable[newIndex].insert(current.key, current.value);
+                current = current.next;
             }
         }
 
-        // Replace the old table with the new table
         this.table = newTable;
-        this.M = newSize; // Update the table size
+        this.M = newSize;
     }
 
-    // Insert key and value
     public void insert(K key, V value) {
-        if (size >= M * 0.75) {
-            resize();
-        }
+
+        ExamineLoad();
+
         int index = hash(key, M);
-        LinkedList<Node<K, V>> bucket = table[index];
+        AutoAdjustedList<K, V> bucket = table[index];
 
-        for (Node<K, V> node : bucket) {
-            if (node.key.equals(key)) {
-                node.value = value;
-                return;
-            }
+        if (bucket.contains(key)) {
+            bucket.remove(key);
         }
 
-        bucket.add(new Node<>(key, value));
+        bucket.insert(key, value);
         size++;
 
-        if (bucket.size() > 1) {
-            collisionCounter = collisionCounter + 1;
-            collisionMessage = "Collision at { index " + index + " with key -> " + key + "}";
+        if (bucket.getSize() > 1) {
+            collisionCounter++;
+            collisionMessage = "Collision at { index " + index + " with key -> " + key + " }";
         }
     }
 
-    // Buscar valor por chave
     public V search(K key) {
         int index = hash(key, M);
-        LinkedList<Node<K, V>> bucket = table[index];
+        AutoAdjustedList<K, V> bucket = table[index];
 
-        for (Node<K, V> node : bucket) {
-            if (node.key.equals(key)) {
-                //System.out.println("Found key: " + key + " with value: " + node.value);
-                return node.value;
-            }
-        }
-
-        return null;
+        return bucket.search(key);
     }
 
-    // Remove key
     public void remove(K key) {
         int index = hash(key, M);
-        LinkedList<Node<K, V>> bucket = table[index];
+        AutoAdjustedList<K, V> bucket = table[index];
 
-        bucket.removeIf(node -> node.key.equals(key));
+        if (bucket.remove(key)) {
+            size--;
+        }
     }
 
-    // show table
     public void show() {
         for (int i = 0; i < M; i++) {
             System.out.print("[" + i + "] -> ");
@@ -119,8 +122,8 @@ public class HashTableExternal<K, V> implements InterfaceHashTableExternal<K, V>
             if (table[i].isEmpty()) {
                 System.out.println("Empty\n");
             } else {
-                for (Node<K, V> node : table[i]) {
-                    System.out.print("{ " + node.key + " } -> ");
+                for (AutoAdjustedList.Node<K, V> current = table[i].head; current != null; current = current.next) {
+                    System.out.print("{ " + current.key + " } -> ");
                 }
                 System.out.println("\n");
             }
@@ -135,21 +138,14 @@ public class HashTableExternal<K, V> implements InterfaceHashTableExternal<K, V>
         if (collisionCounter != 0) {
             return collisionMessage;
         }
-        collisionCounter = 0;
         return null;
-
     }
 
-    public boolean contains(K key) {
+    // Check if the table contains a key
+    public boolean Contains(K key) {
         int index = hash(key, M);
-        LinkedList<Node<K, V>> bucket = table[index];
+        AutoAdjustedList<K, V> bucket = table[index];
 
-        for (Node<K, V> node : bucket) {
-            if (node.key.equals(key)) {
-                return true;
-            }
-        }
-
-        return false;
+        return bucket.contains(key);
     }
 }
